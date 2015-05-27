@@ -34,6 +34,28 @@ var _ = Describe("ContainSequence", func() {
 				logger.Error("action", expectedError, lager.Data{"event": "failed", "task": "my-task"})
 			})
 
+			It("matches an info entry", func() {
+				Expect(log).To(glager.ContainSequence(
+					glager.Info(
+						glager.Source("logger"),
+						glager.Message("logger.action"),
+						glager.Data("event", "starting"),
+						glager.Data("task", "my-task"),
+					),
+				))
+			})
+
+			It("matches a debug entry", func() {
+				Expect(log).To(glager.ContainSequence(
+					glager.Debug(
+						glager.Source("logger"),
+						glager.Message("logger.action"),
+						glager.Data("event", "debugging"),
+						glager.Data("task", "my-task"),
+					),
+				))
+			})
+
 			It("matches an error entry", func() {
 				Expect(log).To(glager.ContainSequence(
 					glager.Error(

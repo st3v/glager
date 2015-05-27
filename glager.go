@@ -2,39 +2,58 @@ package glager
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
 	"github.com/pivotal-golang/lager"
 )
 
-func ContainSequence(expectedSequence ...LogEntry) types.GomegaMatcher {
+type logEntry lager.LogFormat
+
+type logEntries []logEntry
+
+type logEntryData lager.Data
+
+type option func(*logEntry)
+
+type logMatcher struct {
+	actual   logEntries
+	expected logEntries
+}
+
+func ContainSequence(expectedSequence ...logEntry) types.GomegaMatcher {
 	return &logMatcher{
 		expected: expectedSequence,
 	}
 }
 
-func Info(options ...option) LogEntry {
+func Info(options ...option) logEntry {
 	return Entry(lager.INFO, options...)
 }
 
-func Debug(options ...option) LogEntry {
+func Debug(options ...option) logEntry {
 	return Entry(lager.DEBUG, options...)
 }
 
-func Error(err error, options ...option) LogEntry {
+func Error(err error, options ...option) logEntry {
+	if err == nil {
+		err = errors.New("")
+	}
+
 	options = append(options, Data("error", err.Error()))
 	return Entry(lager.ERROR, options...)
 }
 
-func Fatal(options ...option) LogEntry {
+func Fatal(options ...option) logEntry {
 	return Entry(lager.FATAL, options...)
 }
 
-func Entry(logLevel lager.LogLevel, options ...option) LogEntry {
-	entry := LogEntry(lager.LogFormat{
+func Entry(logLevel lager.LogLevel, options ...option) logEntry {
+	entry := logEntry(lager.LogFormat{
 		LogLevel: logLevel,
 		Data:     lager.Data{},
 	})
@@ -46,14 +65,8 @@ func Entry(logLevel lager.LogLevel, options ...option) LogEntry {
 	return entry
 }
 
-type LogEntry lager.LogFormat
-
-type LogEntryData lager.Data
-
-type option func(*LogEntry)
-
 func Message(msg string) option {
-	return func(e *LogEntry) {
+	return func(e *logEntry) {
 		e.Message = msg
 	}
 }
@@ -63,8 +76,15 @@ func Action(action string) option {
 }
 
 func Source(src string) option {
-	return func(e *LogEntry) {
+	return func(e *logEntry) {
 		e.Source = src
+	}
+}
+
+func Timestamp(time.Time) option {
+	ts := fmt.Sprintf("%.9f", float64(time.Now().UnixNano())/1e9)
+	return func(e *logEntry) {
+		e.Timestamp = ts
 	}
 }
 
@@ -73,16 +93,11 @@ func Data(kv ...string) option {
 		kv = append(kv, "")
 	}
 
-	return func(e *LogEntry) {
+	return func(e *logEntry) {
 		for i := 0; i < len(kv); i += 2 {
 			e.Data[kv[i]] = kv[i+1]
 		}
 	}
-}
-
-type logMatcher struct {
-	actual   LogEntries
-	expected LogEntries
 }
 
 func (lm *logMatcher) Match(actual interface{}) (success bool, err error) {
@@ -93,10 +108,10 @@ func (lm *logMatcher) Match(actual interface{}) (success bool, err error) {
 
 	decoder := json.NewDecoder(reader)
 
-	lm.actual = LogEntries{}
+	lm.actual = logEntries{}
 
 	for {
-		var entry LogEntry
+		var entry logEntry
 		if err := decoder.Decode(&entry); err == io.EOF {
 			break
 		} else if err != nil {
@@ -120,31 +135,27 @@ func (lm *logMatcher) Match(actual interface{}) (success bool, err error) {
 	return true, nil
 }
 
-type LogEntries []LogEntry
-
-func (entries LogEntries) indexOf(entry LogEntry) (int, bool) {
-	for i, actual := range entries {
-		if actual.contains(entry) {
-			return i, true
-		}
-	}
-	return 0, false
+func (lm *logMatcher) FailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf(
+		"Expected\n\t%s\nto contain log sequence \n\t%s",
+		format.Object(lm.actual, 0),
+		format.Object(lm.expected, 0),
+	)
 }
 
-func (entries LogEntries) contains(entry LogEntry) bool {
-	for _, actual := range entries {
-		if actual.contains(entry) {
-			return true
-		}
-	}
-	return false
+func (lm *logMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf(
+		"Expected\n\t%s\nnot to contain log sequence \n\t%s",
+		format.Object(lm.actual, 0),
+		format.Object(lm.expected, 0),
+	)
 }
 
-func (entry LogEntry) LogData() LogEntryData {
-	return LogEntryData(entry.Data)
+func (entry logEntry) logData() logEntryData {
+	return logEntryData(entry.Data)
 }
 
-func (actual LogEntry) contains(expected LogEntry) bool {
+func (actual logEntry) contains(expected logEntry) bool {
 	if expected.Source != "" && actual.Source != expected.Source {
 		return false
 	}
@@ -161,14 +172,14 @@ func (actual LogEntry) contains(expected LogEntry) bool {
 		return false
 	}
 
-	if !actual.LogData().contains(expected.LogData()) {
+	if !actual.logData().contains(expected.logData()) {
 		return false
 	}
 
 	return true
 }
 
-func (actual LogEntryData) contains(expected LogEntryData) bool {
+func (actual logEntryData) contains(expected logEntryData) bool {
 	for k, v := range expected {
 		actualValue, found := actual[k]
 		if !found || v != actualValue {
@@ -178,73 +189,11 @@ func (actual LogEntryData) contains(expected LogEntryData) bool {
 	return true
 }
 
-func (lm *logMatcher) FailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf(
-		"Expected\n\t%#v\nto contain log sequence \n\t%#v",
-		lm.actual,
-		lm.expected,
-	)
+func (entries logEntries) indexOf(entry logEntry) (int, bool) {
+	for i, actual := range entries {
+		if actual.contains(entry) {
+			return i, true
+		}
+	}
+	return 0, false
 }
-
-func (lm *logMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf(
-		"Expected\n\t%#v\nnot to contain log sequence \n\t%#v",
-		lm.actual,
-		lm.expected,
-	)
-}
-
-/**
-
-Expect(log).To(ContainLagerEntries(
-	lager.LogFormat{
-		Message: "logger.pipeline-step",
-		Source:  "loger",
-		Data: lager.Data{
-			"event":    "done",
-			"pipeline": "some-name",
-			"task":     "task1",
-		},
-	},
-))
-
-Expect(log).To(glager.Log(
-	lager.LogFormat{
-		Message: "logger.pipeline-step",
-		Source:  "loger",
-		Data: lager.Data{
-			"event":    "done",
-			"pipeline": "some-name",
-			"task":     "task1",
-		},
-	},
-))
-
-Expect(log).To(glager.Log(
-	glager.Entry(
-		glager.Message("logger.pipeline-step"),
-		glager.Source("loger"),
-		glager.Data("event", "starting"),
-		glager.Data("task", "task1"),
-	),
-	glager.Entry(
-		glager.Message("loger.pipeline-step")
-		glager.Source("loger"),
-		glager.Data("event", "done"),
-		glager.Data("task", "task1"),
-	),
-))
-
-Expect(log).To(glager.Log(
-	glager.Entry(
-		glager.Message("logger.pipeline-step"),
-		glager.Source("loger"),
-		glager.Data("event", "starting", "task", "task1"),
-	),
-	glager.Entry(
-		glager.Message("loger.pipeline-step")
-		glager.Source("loger"),
-		glager.Data("event", "done", "task", "task1"),
-	),
-))
-*/
