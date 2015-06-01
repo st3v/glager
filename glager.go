@@ -1,6 +1,7 @@
 package glager
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/onsi/gomega/format"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/types"
 	"github.com/pivotal-golang/lager"
 )
@@ -100,9 +102,21 @@ func Data(kv ...string) option {
 	}
 }
 
+type ContentsProvider interface {
+	Contents() []byte
+}
+
 func (lm *logMatcher) Match(actual interface{}) (success bool, err error) {
-	reader, ok := actual.(io.Reader)
-	if !ok {
+	var reader io.Reader
+
+	switch x := actual.(type) {
+	case gbytes.BufferProvider:
+		reader = bytes.NewReader(x.Buffer().Contents())
+	case ContentsProvider:
+		reader = bytes.NewReader(x.Contents())
+	case io.Reader:
+		reader = x
+	default:
 		return false, fmt.Errorf("Contains must be passed an io.Reader. Got:\n%s", format.Object(actual, 1))
 	}
 
