@@ -31,6 +31,27 @@ var _ = Describe(".ContainSequence", func() {
 		logger.RegisterSink(lager.NewWriterSink(buffer, lager.DEBUG))
 	})
 
+	Context("when actual is an invalid type", func() {
+		var (
+			success bool
+			err     error
+		)
+
+		BeforeEach(func() {
+			matcher := ContainSequence(Info())
+			success, err = matcher.Match("foo")
+		})
+
+		It("returns failure", func() {
+			Expect(success).To(BeFalse())
+		})
+
+		It("returns an error", func() {
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("ContainSequence must be passed"))
+		})
+	})
+
 	Context("when actual is a BufferProvider", func() {
 		var sink *lagertest.TestSink
 

@@ -117,7 +117,7 @@ func (lm *logMatcher) Match(actual interface{}) (success bool, err error) {
 	case io.Reader:
 		reader = x
 	default:
-		return false, fmt.Errorf("Contains must be passed an io.Reader. Got:\n%s", format.Object(actual, 1))
+		return false, fmt.Errorf("ContainSequence must be passed an io.Reader, glager.ContentsProvider, or gbytes.BufferProvider. Got:\n%s", format.Object(actual, 1))
 	}
 
 	decoder := json.NewDecoder(reader)
