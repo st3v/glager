@@ -3,7 +3,6 @@ package glager
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -42,15 +41,18 @@ func Debug(options ...option) logEntry {
 }
 
 func Error(err error, options ...option) logEntry {
-	if err == nil {
-		err = errors.New("")
+	if err != nil {
+		options = append(options, Data("error", err.Error()))
 	}
 
-	options = append(options, Data("error", err.Error()))
 	return Entry(lager.ERROR, options...)
 }
 
-func Fatal(options ...option) logEntry {
+func Fatal(err error, options ...option) logEntry {
+	if err != nil {
+		options = append(options, Data("error", err.Error()))
+	}
+
 	return Entry(lager.FATAL, options...)
 }
 
