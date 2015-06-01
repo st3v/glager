@@ -2,9 +2,10 @@ package glager_test
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -31,75 +32,6 @@ var _ = Describe(".ContainSequence", func() {
 		buffer = gbytes.NewBuffer()
 		logger = lager.NewLogger(expectedSource)
 		logger.RegisterSink(lager.NewWriterSink(buffer, lager.DEBUG))
-	})
-
-	Context("when actual is an invalid type", func() {
-		var (
-			success bool
-			err     error
-		)
-
-		BeforeEach(func() {
-			matcher := ContainSequence(Info())
-			success, err = matcher.Match("foo")
-		})
-
-		It("returns failure", func() {
-			Expect(success).To(BeFalse())
-		})
-
-		It("returns an error", func() {
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("ContainSequence must be passed"))
-		})
-	})
-
-	Context("when actual is a BufferProvider", func() {
-		var sink *lagertest.TestSink
-
-		BeforeEach(func() {
-			sink = lagertest.NewTestSink()
-			logger.RegisterSink(sink)
-			logger.Info("some-info")
-		})
-
-		It("matches an entry", func() {
-			Expect(sink).To(ContainSequence(Info()))
-		})
-
-		It("does match on subsequent calls", func() {
-			Expect(sink).To(ContainSequence(Info()))
-			Expect(sink).To(ContainSequence(Info()))
-		})
-	})
-
-	Context("when actual is a ContentsProvider", func() {
-		BeforeEach(func() {
-			logger.Info("some-info")
-		})
-
-		It("matches an entry", func() {
-			Expect(buffer).To(ContainSequence(Info()))
-		})
-
-		It("does match on subsequent calls", func() {
-			Expect(buffer).To(ContainSequence(Info()))
-			Expect(buffer).To(ContainSequence(Info()))
-		})
-	})
-
-	Context("when actual is an io.Reader", func() {
-		var log io.Reader
-
-		BeforeEach(func() {
-			log = bufio.NewReader(buffer)
-			logger.Info("some-info")
-		})
-
-		It("does not match on subsequent calls", func() {
-			Expect(log).To(ContainSequence(Info()))
-			Expect(log).ToNot(ContainSequence(Info()))
-		})
 	})
 
 	Context("when actual contains an entry", func() {
@@ -515,6 +447,108 @@ var _ = Describe(".ContainSequence", func() {
 			logger = lager.NewLogger("logger")
 			logger.RegisterSink(lager.NewWriterSink(buffer, lager.DEBUG))
 			logger.Debug("some-debug")
+		})
+
+		Describe("Match", func() {
+			var (
+				actual  interface{}
+				success bool
+				err     error
+			)
+
+			JustBeforeEach(func() {
+				logger.Info("some-info")
+				success, err = matcher.Match(actual)
+			})
+
+			Context("when actual is an invalid type", func() {
+				BeforeEach(func() {
+					actual = "invalid"
+				})
+
+				It("returns failure", func() {
+					Expect(success).To(BeFalse())
+				})
+
+				It("returns an error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("ContainSequence must be passed"))
+				})
+			})
+
+			Context("when actual is a BufferProvider", func() {
+				var sink *lagertest.TestSink
+
+				BeforeEach(func() {
+					sink = lagertest.NewTestSink()
+					logger.RegisterSink(sink)
+					actual = sink
+				})
+
+				It("returns success", func() {
+					Expect(success).To(BeTrue())
+				})
+
+				It("does not return an error", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does match on subsequent calls", func() {
+					Expect(actual).To(matcher)
+				})
+			})
+
+			Context("when actual is a ContentsProvider", func() {
+				BeforeEach(func() {
+					actual = buffer
+				})
+
+				It("returns success", func() {
+					Expect(success).To(BeTrue())
+				})
+
+				It("does not return an error", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does match on subsequent calls", func() {
+					Expect(actual).To(matcher)
+				})
+			})
+
+			Context("when actual is an io.Reader", func() {
+				BeforeEach(func() {
+					actual = bufio.NewReader(buffer)
+				})
+
+				It("returns success", func() {
+					Expect(success).To(BeTrue())
+				})
+
+				It("does not return an error", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does not match on subsequent calls", func() {
+					Expect(actual).ToNot(matcher)
+				})
+			})
+
+			Context("when actual contains invalid entries", func() {
+				BeforeEach(func() {
+					actual = strings.NewReader("invalid")
+				})
+
+				It("returns failure", func() {
+					Expect(success).To(BeFalse())
+				})
+
+				It("returns a json.SyntaxError", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(BeAssignableToTypeOf(&json.SyntaxError{}))
+				})
+			})
+
 		})
 
 		Describe("FailureMessage", func() {
