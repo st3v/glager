@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gbytes"
@@ -82,13 +81,6 @@ func Action(action string) option {
 func Source(src string) option {
 	return func(e *logEntry) {
 		e.Source = src
-	}
-}
-
-func Timestamp(time.Time) option {
-	ts := fmt.Sprintf("%.9f", float64(time.Now().UnixNano())/1e9)
-	return func(e *logEntry) {
-		e.Timestamp = ts
 	}
 }
 
@@ -181,10 +173,6 @@ func (actual logEntry) contains(expected logEntry) bool {
 	}
 
 	if actual.LogLevel != expected.LogLevel {
-		return false
-	}
-
-	if expected.Timestamp != "" && actual.Timestamp != expected.Timestamp {
 		return false
 	}
 
