@@ -502,4 +502,37 @@ var _ = Describe(".ContainSequence", func() {
 			))
 		})
 	})
+
+	Describe("logMatcher", func() {
+		var (
+			buffer  *gbytes.Buffer
+			logger  lager.Logger
+			matcher = ContainSequence(Info())
+		)
+
+		BeforeEach(func() {
+			buffer = gbytes.NewBuffer()
+			logger = lager.NewLogger("logger")
+			logger.RegisterSink(lager.NewWriterSink(buffer, lager.DEBUG))
+			logger.Debug("some-debug")
+		})
+
+		Describe("FailureMessage", func() {
+			It("returns the right message", func() {
+				matcher.Match(buffer)
+				Expect(matcher.FailureMessage(buffer)).To(ContainSubstring(
+					"to contain log sequence",
+				))
+			})
+		})
+
+		Describe("NegatedFailureMessage", func() {
+			It("returns the right message", func() {
+				matcher.Match(buffer)
+				Expect(matcher.NegatedFailureMessage(buffer)).To(ContainSubstring(
+					"not to contain log sequence",
+				))
+			})
+		})
+	})
 })
