@@ -23,15 +23,12 @@ func TestGlager(t *testing.T) {
 
 var _ = Describe(".ContainSequence", func() {
 	var (
-		buffer         *gbytes.Buffer
 		logger         lager.Logger
 		expectedSource = "some-source"
 	)
 
 	BeforeEach(func() {
-		buffer = gbytes.NewBuffer()
-		logger = lager.NewLogger(expectedSource)
-		logger.RegisterSink(lager.NewWriterSink(buffer, lager.DEBUG))
+		logger = NewLogger(expectedSource)
 	})
 
 	Context("when actual contains an entry", func() {
@@ -48,13 +45,13 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("matches an empty info entry", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Info(),
 				))
 			})
 
 			It("matches an info entry with a source only", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Info(
 						Source(expectedSource),
 					),
@@ -62,7 +59,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("matches an info entry with a message only", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Info(
 						Message(expectedAction),
 					),
@@ -70,7 +67,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("matches an info entry with an action only", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Info(
 						Action(expectedAction),
 					),
@@ -78,7 +75,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("matches an info entry with data only", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Info(
 						Data(expectedDataKey, expectedDataValue),
 					),
@@ -86,7 +83,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("matches the correct info entry", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Info(
 						Source(expectedSource),
 						Message(expectedAction),
@@ -96,7 +93,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an info entry with an incorrect source", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Info(
 						Source("invalid"),
 						Message(expectedAction),
@@ -106,7 +103,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an info entry with an incorrect message", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Info(
 						Source(expectedSource),
 						Message("invalid"),
@@ -116,7 +113,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an info entry with incorrect data", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Info(
 						Source(expectedSource),
 						Message(expectedAction),
@@ -126,15 +123,15 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a debug entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Debug()))
+				Expect(logger).ToNot(ContainSequence(Debug()))
 			})
 
 			It("does not match an error entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Error(nil)))
+				Expect(logger).ToNot(ContainSequence(Error(nil)))
 			})
 
 			It("does not match a fatal entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Fatal(nil)))
+				Expect(logger).ToNot(ContainSequence(Fatal(nil)))
 			})
 		})
 
@@ -146,7 +143,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does match the correct error without additional fields", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Error(
 						expectedErr,
 					),
@@ -154,7 +151,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does match the correct error with correct additional fields", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Error(
 						expectedErr,
 						Source(expectedSource),
@@ -165,11 +162,11 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an incorrect error", func() {
-				Expect(buffer).ToNot(ContainSequence(Error(errors.New("some-other-error"))))
+				Expect(logger).ToNot(ContainSequence(Error(errors.New("some-other-error"))))
 			})
 
 			It("does not match the correct error with incorrect source", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Error(
 						expectedErr,
 						Source("incorrect"),
@@ -178,7 +175,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match the correct error with incorrect message", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Error(
 						expectedErr,
 						Message("incorrect"),
@@ -187,7 +184,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match the correct error with incorrect data", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Error(
 						expectedErr,
 						Data("non-exiting-key", "non-existing-value"),
@@ -196,15 +193,15 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an info entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Info()))
+				Expect(logger).ToNot(ContainSequence(Info()))
 			})
 
 			It("does not match a debug entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Debug()))
+				Expect(logger).ToNot(ContainSequence(Debug()))
 			})
 
 			It("does not match a fatal entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Fatal(nil)))
+				Expect(logger).ToNot(ContainSequence(Fatal(nil)))
 			})
 		})
 
@@ -214,11 +211,11 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does match an empty debug entry", func() {
-				Expect(buffer).To(ContainSequence(Debug()))
+				Expect(logger).To(ContainSequence(Debug()))
 			})
 
 			It("does match the correct debug entry", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Debug(
 						Source(expectedSource),
 						Message(expectedAction),
@@ -228,7 +225,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a debug entry with an incorrect source", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Debug(
 						Source("incorrect"),
 					),
@@ -236,7 +233,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a debug entry with an incorrect message", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Debug(
 						Message("incorrect"),
 					),
@@ -244,7 +241,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a debug entry with a incorrect data", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Debug(
 						Data("non-existing-key"),
 					),
@@ -252,15 +249,15 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an info entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Info()))
+				Expect(logger).ToNot(ContainSequence(Info()))
 			})
 
 			It("does not match an error entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Error(nil)))
+				Expect(logger).ToNot(ContainSequence(Error(nil)))
 			})
 
 			It("does not match a fatal entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Fatal(nil)))
+				Expect(logger).ToNot(ContainSequence(Fatal(nil)))
 			})
 		})
 
@@ -278,11 +275,11 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does match an empty fatal entry", func() {
-				Expect(buffer).To(ContainSequence(Fatal(nil)))
+				Expect(logger).To(ContainSequence(Fatal(nil)))
 			})
 
 			It("does match a fatal entry with correct error", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Fatal(
 						expectedErr,
 					),
@@ -290,7 +287,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does match a fatal entry with correct error and additional fields", func() {
-				Expect(buffer).To(ContainSequence(
+				Expect(logger).To(ContainSequence(
 					Fatal(
 						expectedErr,
 						Source(expectedSource),
@@ -301,7 +298,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a fatal entry with an incorrect error", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Fatal(
 						errors.New("some-other-error"),
 					),
@@ -309,7 +306,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a fatal entry with an incorrect source", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Fatal(
 						expectedErr,
 						Source("incorrect"),
@@ -318,7 +315,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a fatal entry with an incorrect action", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Fatal(
 						expectedErr,
 						Action("incorrect"),
@@ -327,7 +324,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a fatal entry with incorrect data", func() {
-				Expect(buffer).ToNot(ContainSequence(
+				Expect(logger).ToNot(ContainSequence(
 					Fatal(
 						expectedErr,
 						Data("incorrect"),
@@ -336,15 +333,15 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an info entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Info()))
+				Expect(logger).ToNot(ContainSequence(Info()))
 			})
 
 			It("does not match a debug entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Debug()))
+				Expect(logger).ToNot(ContainSequence(Debug()))
 			})
 
 			It("does not match an error entry", func() {
-				Expect(buffer).ToNot(ContainSequence(Error(nil)))
+				Expect(logger).ToNot(ContainSequence(Error(nil)))
 			})
 		})
 	})
@@ -359,7 +356,7 @@ var _ = Describe(".ContainSequence", func() {
 		})
 
 		It("does match a correct sequence", func() {
-			Expect(buffer).To(ContainSequence(
+			Expect(logger).To(ContainSequence(
 				Info(
 					Data("event", "starting", "task", "my-task"),
 				),
@@ -374,7 +371,7 @@ var _ = Describe(".ContainSequence", func() {
 		})
 
 		It("does match a correct subsequence with missing elements in the beginning", func() {
-			Expect(buffer).To(ContainSequence(
+			Expect(logger).To(ContainSequence(
 				Debug(
 					Data("event", "debugging", "task", "my-task"),
 				),
@@ -386,7 +383,7 @@ var _ = Describe(".ContainSequence", func() {
 		})
 
 		It("does match a correct subsequence with missing elements in the end", func() {
-			Expect(buffer).To(ContainSequence(
+			Expect(logger).To(ContainSequence(
 				Info(
 					Data("event", "starting", "task", "my-task"),
 				),
@@ -397,7 +394,7 @@ var _ = Describe(".ContainSequence", func() {
 		})
 
 		It("does match a correct but non-continious subsequence", func() {
-			Expect(buffer).To(ContainSequence(
+			Expect(logger).To(ContainSequence(
 				Info(
 					Data("event", "starting", "task", "my-task"),
 				),
@@ -409,7 +406,7 @@ var _ = Describe(".ContainSequence", func() {
 		})
 
 		It("does not match an incorrect sequence", func() {
-			Expect(buffer).ToNot(ContainSequence(
+			Expect(logger).ToNot(ContainSequence(
 				Info(
 					Data("event", "starting", "task", "my-task"),
 				),
@@ -420,7 +417,7 @@ var _ = Describe(".ContainSequence", func() {
 		})
 
 		It("does not match an out-of-order sequence", func() {
-			Expect(buffer).ToNot(ContainSequence(
+			Expect(logger).ToNot(ContainSequence(
 				Debug(
 					Data("event", "debugging", "task", "my-task"),
 				),

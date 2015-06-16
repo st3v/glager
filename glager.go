@@ -20,6 +20,22 @@ type logEntryData lager.Data
 
 type option func(*logEntry)
 
+type TestLogger struct {
+	lager.Logger
+	buf *gbytes.Buffer
+}
+
+func NewLogger(component string) *TestLogger {
+	buf := gbytes.NewBuffer()
+	log := lager.NewLogger(component)
+	log.RegisterSink(lager.NewWriterSink(buf, lager.DEBUG))
+	return &TestLogger{log, buf}
+}
+
+func (l *TestLogger) Buffer() *gbytes.Buffer {
+	return l.buf
+}
+
 type logMatcher struct {
 	actual   logEntries
 	expected logEntries
