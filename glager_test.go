@@ -127,11 +127,11 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an error entry", func() {
-				Expect(logger).ToNot(ContainSequence(Error(nil)))
+				Expect(logger).ToNot(ContainSequence(Error(AnyErr)))
 			})
 
 			It("does not match a fatal entry", func() {
-				Expect(logger).ToNot(ContainSequence(Fatal(nil)))
+				Expect(logger).ToNot(ContainSequence(Fatal(AnyErr)))
 			})
 		})
 
@@ -146,6 +146,22 @@ var _ = Describe(".ContainSequence", func() {
 				Expect(logger).To(ContainSequence(
 					Error(
 						expectedErr,
+					),
+				))
+			})
+
+			It("does match AnyErr", func() {
+				Expect(logger).To(ContainSequence(
+					Error(
+						AnyErr,
+					),
+				))
+			})
+
+			It("does match nil err", func() {
+				Expect(logger).To(ContainSequence(
+					Error(
+						nil,
 					),
 				))
 			})
@@ -201,7 +217,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match a fatal entry", func() {
-				Expect(logger).ToNot(ContainSequence(Fatal(nil)))
+				Expect(logger).ToNot(ContainSequence(Fatal(AnyErr)))
 			})
 		})
 
@@ -253,11 +269,11 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an error entry", func() {
-				Expect(logger).ToNot(ContainSequence(Error(nil)))
+				Expect(logger).ToNot(ContainSequence(Error(AnyErr)))
 			})
 
 			It("does not match a fatal entry", func() {
-				Expect(logger).ToNot(ContainSequence(Fatal(nil)))
+				Expect(logger).ToNot(ContainSequence(Fatal(AnyErr)))
 			})
 		})
 
@@ -274,7 +290,11 @@ var _ = Describe(".ContainSequence", func() {
 				}()
 			})
 
-			It("does match an empty fatal entry", func() {
+			It("does match fatal entry with AnyErr", func() {
+				Expect(logger).To(ContainSequence(Fatal(AnyErr)))
+			})
+
+			It("does match fatal entry with nil err", func() {
 				Expect(logger).To(ContainSequence(Fatal(nil)))
 			})
 
@@ -341,7 +361,7 @@ var _ = Describe(".ContainSequence", func() {
 			})
 
 			It("does not match an error entry", func() {
-				Expect(logger).ToNot(ContainSequence(Error(nil)))
+				Expect(logger).ToNot(ContainSequence(Error(AnyErr)))
 			})
 		})
 	})

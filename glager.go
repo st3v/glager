@@ -55,6 +55,8 @@ func Debug(options ...option) logEntry {
 	return Entry(lager.DEBUG, options...)
 }
 
+var AnyErr error = nil
+
 func Error(err error, options ...option) logEntry {
 	if err != nil {
 		options = append(options, Data("error", err.Error()))
