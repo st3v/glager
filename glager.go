@@ -102,14 +102,19 @@ func Source(src string) option {
 	}
 }
 
-func Data(kv ...string) option {
+func Data(kv ...interface{}) option {
 	if len(kv)%2 == 1 {
 		kv = append(kv, "")
 	}
 
 	return func(e *logEntry) {
 		for i := 0; i < len(kv); i += 2 {
-			e.Data[kv[i]] = kv[i+1]
+			key, ok := kv[i].(string)
+			if !ok {
+				err := fmt.Errorf("Invalid type for data key. Want string. Got %T:%v.", kv[i], kv[i])
+				panic(err)
+			}
+			e.Data[key] = kv[i+1]
 		}
 	}
 }
@@ -149,7 +154,10 @@ func (lm *logMatcher) Match(actual interface{}) (success bool, err error) {
 	actualEntries := lm.actual
 
 	for _, expected := range lm.expected {
-		i, found := actualEntries.indexOf(expected)
+		i, found, err := actualEntries.indexOf(expected)
+		if err != nil {
+			return false, err
+		}
 
 		if !found {
 			return false, nil
@@ -181,41 +189,61 @@ func (entry logEntry) logData() logEntryData {
 	return logEntryData(entry.Data)
 }
 
-func (actual logEntry) contains(expected logEntry) bool {
+func (actual logEntry) contains(expected logEntry) (bool, error) {
 	if expected.Source != "" && actual.Source != expected.Source {
-		return false
+		return false, nil
 	}
 
 	if expected.Message != "" && actual.Message != expected.Message {
-		return false
+		return false, nil
 	}
 
 	if actual.LogLevel != expected.LogLevel {
-		return false
+		return false, nil
 	}
 
-	if !actual.logData().contains(expected.logData()) {
-		return false
+	containsData, err := actual.logData().contains(expected.logData())
+	if err != nil {
+		return false, err
 	}
 
-	return true
+	return containsData, nil
 }
 
-func (actual logEntryData) contains(expected logEntryData) bool {
-	for k, v := range expected {
-		actualValue, found := actual[k]
-		if !found || v != actualValue {
-			return false
+func (actual logEntryData) contains(expected logEntryData) (bool, error) {
+	for expectedKey, expectedVal := range expected {
+		actualVal, found := actual[expectedKey]
+		if !found {
+			return false, nil
+		}
+
+		actualJSON, err := json.Marshal(actualVal)
+		if err != nil {
+			return false, err
+		}
+
+		expectedJSON, err := json.Marshal(expectedVal)
+		if err != nil {
+			return false, err
+		}
+
+		if string(actualJSON) != string(expectedJSON) {
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
-func (entries logEntries) indexOf(entry logEntry) (int, bool) {
+func (entries logEntries) indexOf(entry logEntry) (int, bool, error) {
 	for i, actual := range entries {
-		if actual.contains(entry) {
-			return i, true
+		containsEntry, err := actual.contains(entry)
+		if err != nil {
+			return 0, false, err
+		}
+
+		if containsEntry {
+			return i, true, nil
 		}
 	}
-	return 0, false
+	return 0, false, nil
 }

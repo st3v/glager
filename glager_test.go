@@ -133,6 +133,106 @@ var _ = Describe(".ContainSequence", func() {
 			It("does not match a fatal entry", func() {
 				Expect(logger).ToNot(ContainSequence(Fatal(AnyErr)))
 			})
+
+			Context("with non-string data values", func() {
+				type foo struct {
+					Foo string `json:"foo"`
+				}
+
+				var (
+					obj foo
+					arr []string
+				)
+
+				BeforeEach(func() {
+					obj = foo{"bar"}
+
+					arr = []string{"a", "b", "c"}
+
+					logger.Info("non-string-data", lager.Data{
+						"int":    17,
+						"float":  1.23,
+						"bool":   true,
+						"array":  arr,
+						"object": obj,
+						"null":   nil,
+					})
+				})
+
+				It("matches a correct int value", func() {
+					Expect(logger).To(ContainSequence(
+						Info(Data("int", 17)),
+					))
+				})
+
+				It("does not match an incorrect int value", func() {
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("int", 99)),
+					))
+				})
+
+				It("matches a correct float value", func() {
+					Expect(logger).To(ContainSequence(
+						Info(Data("float", 1.23)),
+					))
+				})
+
+				It("does not match an incorrect float value", func() {
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("float", 1.2)),
+					))
+				})
+
+				It("matches a correct bool value", func() {
+					Expect(logger).To(ContainSequence(
+						Info(Data("bool", true)),
+					))
+				})
+
+				It("does not match an incorrect bool value", func() {
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("bool", false)),
+					))
+				})
+
+				It("matches a correct null value", func() {
+					Expect(logger).To(ContainSequence(
+						Info(Data("null", nil)),
+					))
+				})
+
+				It("matches a correct array value", func() {
+					Expect(logger).To(ContainSequence(
+						Info(Data("array", arr)),
+					))
+				})
+
+				It("does not match an incorrect array value", func() {
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("array", []string{"a", "b"})),
+					))
+
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("array", []int{1})),
+					))
+				})
+
+				It("matches a correct object value", func() {
+					Expect(logger).To(ContainSequence(
+						Info(Data("object", obj)),
+					))
+				})
+
+				It("does not match an incorrect object value", func() {
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("object", foo{"boooh"})),
+					))
+
+					Expect(logger).ToNot(ContainSequence(
+						Info(Data("object", errors.New("something"))),
+					))
+				})
+			})
 		})
 
 		Context("that is an error", func() {
@@ -565,7 +665,6 @@ var _ = Describe(".ContainSequence", func() {
 					Expect(err).To(BeAssignableToTypeOf(&json.SyntaxError{}))
 				})
 			})
-
 		})
 
 		Describe("FailureMessage", func() {
@@ -583,6 +682,16 @@ var _ = Describe(".ContainSequence", func() {
 				Expect(matcher.NegatedFailureMessage(buffer)).To(ContainSubstring(
 					"not to contain log sequence",
 				))
+			})
+		})
+	})
+
+	Describe(".Data", func() {
+		Context("when a non-string key is passed", func() {
+			It("panics", func() {
+				Expect(func() {
+					Info(Data([]string{"foo"}, "bar"))
+				}).To(Panic())
 			})
 		})
 	})
