@@ -381,13 +381,9 @@ var _ = Describe(".ContainSequence", func() {
 			var expectedErr = errors.New("some-error")
 
 			BeforeEach(func() {
-				func() {
-					defer func() {
-						recover()
-					}()
-
+				Expect(func() {
 					logger.Fatal(action, expectedErr, lager.Data{expectedDataKey: expectedDataValue})
-				}()
+				}).To(Panic())
 			})
 
 			It("does match fatal entry with AnyErr", func() {
