@@ -217,10 +217,8 @@ func (actual logEntryData) contains(expected logEntryData) (bool, error) {
 			return false, nil
 		}
 
-		actualJSON, err := json.Marshal(actualVal)
-		if err != nil {
-			return false, err
-		}
+		// this has been marshalled and unmarshalled before, no need to check err
+		actualJSON, _ := json.Marshal(actualVal)
 
 		expectedJSON, err := json.Marshal(expectedVal)
 		if err != nil {

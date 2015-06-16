@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/types"
 	"github.com/pivotal-golang/lager"
 	"github.com/pivotal-golang/lager/lagertest"
 	. "github.com/st3v/glager"
@@ -552,10 +553,11 @@ var _ = Describe(".ContainSequence", func() {
 		var (
 			buffer  *gbytes.Buffer
 			logger  lager.Logger
-			matcher = ContainSequence(Info())
+			matcher types.GomegaMatcher
 		)
 
 		BeforeEach(func() {
+			matcher = ContainSequence(Info())
 			buffer = gbytes.NewBuffer()
 			logger = lager.NewLogger("logger")
 			logger.RegisterSink(lager.NewWriterSink(buffer, lager.DEBUG))
@@ -659,6 +661,19 @@ var _ = Describe(".ContainSequence", func() {
 				It("returns a json.SyntaxError", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(BeAssignableToTypeOf(&json.SyntaxError{}))
+				})
+			})
+
+			Context("when expected contains non-encodable data values", func() {
+				BeforeEach(func() {
+					actual = buffer
+					logger.Info("foo", lager.Data{"foo": "bar"})
+					matcher = ContainSequence(Info(Data("foo", func() {})))
+				})
+
+				It("returns a json.UnsupportedType error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(BeAssignableToTypeOf(&json.UnsupportedTypeError{}))
 				})
 			})
 		})
