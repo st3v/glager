@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 
+	"code.cloudfoundry.org/lager"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/types"
-	"github.com/pivotal-golang/lager"
 )
 
 type logEntry lager.LogFormat
