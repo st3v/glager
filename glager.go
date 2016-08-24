@@ -41,6 +41,10 @@ type logMatcher struct {
 	expected logEntries
 }
 
+func HaveLogged(expectedSequence ...logEntry) types.GomegaMatcher {
+	return ContainSequence(expectedSequence...)
+}
+
 func ContainSequence(expectedSequence ...logEntry) types.GomegaMatcher {
 	return &logMatcher{
 		expected: expectedSequence,

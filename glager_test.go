@@ -10,10 +10,12 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/types"
+
 	. "github.com/st3v/glager"
 )
 
@@ -21,6 +23,31 @@ func TestGlager(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Glager Test Suite")
 }
+
+var _ = Describe(".HaveLogged", func() {
+	var (
+		logger            lager.Logger
+		expectedSource    = "some-source"
+		action            = "some-action"
+		expectedAction    = fmt.Sprintf("%s.%s", expectedSource, action)
+		expectedDataKey   = "some-key"
+		expectedDataValue = "some-value"
+	)
+
+	BeforeEach(func() {
+		logger = NewLogger(expectedSource)
+		logger.Info(action, lager.Data{expectedDataKey: expectedDataValue})
+	})
+
+	It("matches an entry", func() {
+		Expect(logger).To(ContainSequence(
+			Info(
+				Action(expectedAction),
+				Data(expectedDataKey, expectedDataValue),
+			),
+		))
+	})
+})
 
 var _ = Describe(".ContainSequence", func() {
 	var (
