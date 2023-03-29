@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/types"
@@ -63,25 +63,26 @@ type logMatcher struct {
 // This matcher works best when used with a TestLogger.
 //
 // Example:
-//   // instantiate glager.TestLogger inside your test and
-//   logger := NewLogger("test")
 //
-//   // pass it to your code and use it in there to log stuff
-//   myFunc(logger)
+//	  // instantiate glager.TestLogger inside your test and
+//	  logger := NewLogger("test")
 //
-//   // verify logging inside your test, using the logger
-//   // in this example we are interested in the log level, the message, and the
-//   // data of the log entries
-//   Expect(logger).To(HaveLogged(
-// 	   Info(
-// 		   Message("test.myFunc"),
-// 		   Data("event", "start"),
-// 	   ),
-// 	   Info(
-// 		   Message("test.myFunc"),
-// 		   Data("event", "done"),
-// 	   ),
-//   ))
+//	  // pass it to your code and use it in there to log stuff
+//	  myFunc(logger)
+//
+//	  // verify logging inside your test, using the logger
+//	  // in this example we are interested in the log level, the message, and the
+//	  // data of the log entries
+//	  Expect(logger).To(HaveLogged(
+//		   Info(
+//			   Message("test.myFunc"),
+//			   Data("event", "start"),
+//		   ),
+//		   Info(
+//			   Message("test.myFunc"),
+//			   Data("event", "done"),
+//		   ),
+//	  ))
 func HaveLogged(expectedSequence ...logEntry) types.GomegaMatcher {
 	return ContainSequence(expectedSequence...)
 }
@@ -98,24 +99,25 @@ func HaveLogged(expectedSequence ...logEntry) types.GomegaMatcher {
 // This matcher works best when used with a Buffer.
 //
 // Example:
-//   // instantiate regular lager logger and register buffer as sink
-//   log := gbytes.NewBuffer()
-//   logger := lager.NewLogger("test")
-//   logger.RegisterSink(lager.NewWriterSink(log, lager.DEBUG))
 //
-//   // pass it to your code and use it in there to log stuff
-//   myFunc(logger)
+//	  // instantiate regular lager logger and register buffer as sink
+//	  log := gbytes.NewBuffer()
+//	  logger := lager.NewLogger("test")
+//	  logger.RegisterSink(lager.NewWriterSink(log, lager.DEBUG))
 //
-//   // verify logging inside your test, using the log buffer
-//   // in this example we are only interested in the data of the log entries
-//   Expect(log).To(ContainSequence(
-// 	   Info(
-// 		   Data("event", "start"),
-// 	   ),
-// 	   Info(
-// 		   Data("event", "done"),
-// 	   ),
-//   ))
+//	  // pass it to your code and use it in there to log stuff
+//	  myFunc(logger)
+//
+//	  // verify logging inside your test, using the log buffer
+//	  // in this example we are only interested in the data of the log entries
+//	  Expect(log).To(ContainSequence(
+//		   Info(
+//			   Data("event", "start"),
+//		   ),
+//		   Info(
+//			   Data("event", "done"),
+//		   ),
+//	  ))
 func ContainSequence(expectedSequence ...logEntry) types.GomegaMatcher {
 	return &logMatcher{
 		expected: expectedSequence,
