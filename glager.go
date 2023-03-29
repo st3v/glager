@@ -127,13 +127,13 @@ func ContainSequence(expectedSequence ...logEntry) types.GomegaMatcher {
 // Info returns a log entry of type lager.INFO that can be used with the
 // HaveLogged and ContainSequence matchers.
 func Info(options ...option) logEntry {
-	return Entry(lager.INFO, options...)
+	return LogEntry(lager.INFO, options...)
 }
 
 // Debug returns a log entry of type lager.DEBUG that can be used with the
 // HaveLogged and ContainSequence matchers.
 func Debug(options ...option) logEntry {
-	return Entry(lager.DEBUG, options...)
+	return LogEntry(lager.DEBUG, options...)
 }
 
 // AnyErr can be used to check of arbitrary errors when matching Error entries.
@@ -146,7 +146,7 @@ func Error(err error, options ...option) logEntry {
 		options = append(options, Data("error", err.Error()))
 	}
 
-	return Entry(lager.ERROR, options...)
+	return LogEntry(lager.ERROR, options...)
 }
 
 // Fatal returns a log entry of type lager.FATAL that can be used with the
@@ -156,12 +156,12 @@ func Fatal(err error, options ...option) logEntry {
 		options = append(options, Data("error", err.Error()))
 	}
 
-	return Entry(lager.FATAL, options...)
+	return LogEntry(lager.FATAL, options...)
 }
 
-// Entry returns a log entry for the specified log level that can be used with
+// LogEntry returns a log entry for the specified log level that can be used with
 // the HaveLogged and ContainSequence matchers.
-func Entry(logLevel lager.LogLevel, options ...option) logEntry {
+func LogEntry(logLevel lager.LogLevel, options ...option) logEntry {
 	entry := logEntry(lager.LogFormat{
 		LogLevel: logLevel,
 		Data:     lager.Data{},
